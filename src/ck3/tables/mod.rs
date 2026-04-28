@@ -10,3 +10,7 @@ pub mod rules;
 pub mod sounds;
 pub mod targets;
 pub mod triggers;
+
+pub use effects::effect_names;
+pub use iterators::iterator_names;
+pub use triggers::trigger_names;

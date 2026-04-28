@@ -27,6 +27,14 @@ static SCOPE_EFFECT_MAP: LazyLock<TigerHashMap<&'static str, (Scopes, Effect)>> 
         hash
     });
 
+/// All built-in effect names, deduplicated and sorted. For LSP completion.
+pub fn effect_names() -> Vec<&'static str> {
+    let mut names: Vec<&'static str> = SCOPE_EFFECT.iter().map(|(_, s, _)| *s).collect();
+    names.sort_unstable();
+    names.dedup();
+    names
+}
+
 // LAST UPDATED HOI4 VERSION 1.16.4
 // See `documentation/effects_documentation.md` from the game files.
 // TODO: activate_advisor and deactivate_advisor can't be checked yet because character idea tokens

@@ -52,6 +52,14 @@ static SCOPE_EFFECT_MAP: LazyLock<TigerHashMap<&'static str, (Scopes, Effect)>> 
         hash
     });
 
+/// All built-in effect names, deduplicated and sorted. For LSP completion.
+pub fn effect_names() -> Vec<&'static str> {
+    let mut names: Vec<&'static str> = SCOPE_EFFECT.iter().map(|(_, s, _)| *s).collect();
+    names.sort_unstable();
+    names.dedup();
+    names
+}
+
 // LAST UPDATED CK3 VERSION 1.18.08.08.08.08.08.08.08.0
 // See `effects.log` from the game data dumps
 const SCOPE_EFFECT: &[(Scopes, &str, Effect)] = &[

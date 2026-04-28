@@ -37,6 +37,14 @@ static TRIGGER_MAP: LazyLock<TigerHashMap<&'static str, (Scopes, Trigger)>> = La
     hash
 });
 
+/// All built-in trigger names, deduplicated and sorted. For LSP completion.
+pub fn trigger_names() -> Vec<&'static str> {
+    let mut names: Vec<&'static str> = TRIGGER.iter().map(|(_, s, _)| *s).collect();
+    names.sort_unstable();
+    names.dedup();
+    names
+}
+
 /// LAST UPDATED HOI4 VERSION 1.16.4
 /// See `documentation/triggers_documentation.md` from the game files.
 /// TODO HOI4

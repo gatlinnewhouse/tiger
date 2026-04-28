@@ -40,6 +40,15 @@ static ITERATOR_MAP: LazyLock<TigerHashMap<&'static str, (Scopes, Scopes)>> = La
     hash
 });
 
+/// All built-in iterator base names, deduplicated and sorted. For LSP completion.
+/// Each entry represents four actual iterators: every_X, any_X, random_X, ordered_X.
+pub fn iterator_names() -> Vec<&'static str> {
+    let mut names: Vec<&'static str> = ITERATOR.iter().map(|(_, s, _)| *s).collect();
+    names.sort_unstable();
+    names.dedup();
+    names
+}
+
 /// LAST UPDATED VIC3 VERSION 1.12.0
 /// See `effects.log` from the game data dumps
 /// These are the list iterators. Every entry represents

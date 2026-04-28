@@ -9,3 +9,7 @@ pub mod on_action;
 pub mod targets;
 pub mod triggers;
 pub mod variables;
+
+pub use effects::effect_names;
+pub use iterators::iterator_names;
+pub use triggers::trigger_names;

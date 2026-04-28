@@ -23,6 +23,14 @@ static ITERATOR_MAP: LazyLock<TigerHashMap<&'static str, (Scopes, Scopes)>> = La
     hash
 });
 
+/// All built-in iterator base names, deduplicated and sorted. For LSP completion.
+pub fn iterator_names() -> Vec<&'static str> {
+    let mut names: Vec<&'static str> = ITERATOR.iter().map(|(_, s, _)| *s).collect();
+    names.sort_unstable();
+    names.dedup();
+    names
+}
+
 /// LAST UPDATED HOI4 VERSION 1.16.4
 /// See `documentation/effects_documentation.md` from the game files.
 /// These are the list iterators. Every entry represents
