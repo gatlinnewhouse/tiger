@@ -1,13 +1,13 @@
 [package]
 name = "tiger-tables"
-version = "1.0.0"
+version = "1.18.0"
 edition = "2024"
 license = "GPL-3.0-or-later"
 description = "Library used by Tiger Validator. It holds tables that may be useful for other projects, so that they can be imported without pulling in all of Tiger."
 homepage = "https://github.com/amtep/tiger"
 repository = "https://github.com/amtep/tiger"
 readme = "../README.md"
-keywords = [ "ck3", "vic3", "imperator", "paradox", "validator", "linter", "mods" ]
+keywords = [ "paradox", "validator", "linter", "mods" ]
 categories = [ "development-tools", "game-development" ]
 rust-version = "1.88"
 
