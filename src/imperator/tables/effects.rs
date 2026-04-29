@@ -341,3 +341,13 @@ const SCOPE_EFFECT: &[(Scopes, &str, Effect)] = &[
     (Scopes::None, "trigger_event", Vbv(validate_trigger_event)),
     (Scopes::None, "while", Control),
 ];
+
+/// Return the block schema for an effect, if it takes a fixed block argument.
+pub fn effect_schema(name: &str) -> Option<Vec<crate::lsp_tables::SchemaField>> {
+    let name_lc = name.to_ascii_lowercase();
+    for (_, s, effect) in SCOPE_EFFECT.iter() {
+        if *s != name_lc { continue; }
+        return crate::lsp_tables::effect_to_schema(effect);
+    }
+    None
+}

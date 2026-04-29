@@ -60,6 +60,16 @@ pub fn effect_names() -> Vec<&'static str> {
     names
 }
 
+/// Return the block schema for an effect, if it takes a fixed block argument.
+pub fn effect_schema(name: &str) -> Option<Vec<crate::lsp_tables::SchemaField>> {
+    let name_lc = name.to_ascii_lowercase();
+    for (_, s, effect) in SCOPE_EFFECT.iter() {
+        if *s != name_lc { continue; }
+        return crate::lsp_tables::effect_to_schema(effect);
+    }
+    None
+}
+
 // LAST UPDATED CK3 VERSION 1.18.08.08.08.08.08.08.08.0
 // See `effects.log` from the game data dumps
 const SCOPE_EFFECT: &[(Scopes, &str, Effect)] = &[

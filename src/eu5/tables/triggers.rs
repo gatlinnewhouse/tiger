@@ -3188,3 +3188,20 @@ const TRIGGER_COMPLEX: &[(Scopes, &str, ArgumentValue, Scopes)] = {
         ),
     ]
 };
+
+/// Return the block schema for a trigger, if it takes a block argument.
+pub fn trigger_schema(name: &str) -> Option<Vec<crate::lsp_tables::SchemaField>> {
+    let name_lc = name.to_ascii_lowercase();
+    for (_, s, trigger) in TRIGGER.iter() {
+        if *s != name_lc { continue; }
+        let fields: Option<&'static [_]> = match trigger {
+            Trigger::Block(f) => Some(f),
+            Trigger::BlockOrCompareValue(f) => Some(f),
+            _ => None,
+        };
+        if let Some(f) = fields {
+            return Some(crate::lsp_tables::extract_block_fields(f));
+        }
+    }
+    None
+}

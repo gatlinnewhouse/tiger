@@ -41,7 +41,7 @@ pub use crate::report::{
     add_loaded_mod_root, disable_ansi_colors, emit_reports, log, set_output_style,
     set_show_loaded_mods, set_show_vanilla, suppress_from_json, take_reports,
 };
-pub use crate::lsp_tables::{LspEntry, LspEntryKind, all_builtin_entries};
+pub use crate::lsp_tables::{LspEntry, LspEntryKind, SchemaField, all_builtin_entries, block_schema};
 pub use crate::token::{Loc, Token};
 
 #[cfg(feature = "internal_benches")]
