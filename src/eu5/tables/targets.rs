@@ -558,3 +558,8 @@ pub fn scope_to_scope_removed(name: &str) -> Option<(&'static str, &'static str)
 }
 
 const SCOPE_TO_SCOPE_REMOVED: &[(&str, &str, &str)] = &[];
+
+/// All scope navigation steps for LSP scope chain completion.
+pub fn scope_transitions() -> &'static [(Scopes, &'static str, Scopes)] {
+    SCOPE_TO_SCOPE
+}

@@ -183,6 +183,67 @@ fn trigger_to_hint(t: &Trigger) -> String {
     }
 }
 
+// ─── Item value lookup ────────────────────────────────────────────────────────
+
+/// Returns the item type name (snake_case, e.g. `"building"`, `"trait"`) for the primary
+/// value of a trigger/effect named `name`, if it directly takes a single `Item` value.
+///
+/// Used for context-sensitive completions: when the cursor is at `add_building = <cursor>`,
+/// call `field_value_item("add_building")` to get `"building"` and filter completions.
+pub fn field_value_item(name: &str) -> Option<&'static str> {
+    #[cfg(feature = "ck3")]
+    if let r @ Some(_) = crate::ck3::tables::trigger_value_item(name)
+        .or_else(|| crate::ck3::tables::effect_value_item(name))
+    { return r; }
+    #[cfg(feature = "vic3")]
+    if let r @ Some(_) = crate::vic3::tables::trigger_value_item(name)
+        .or_else(|| crate::vic3::tables::effect_value_item(name))
+    { return r; }
+    #[cfg(feature = "imperator")]
+    if let r @ Some(_) = crate::imperator::tables::trigger_value_item(name)
+        .or_else(|| crate::imperator::tables::effect_value_item(name))
+    { return r; }
+    #[cfg(feature = "hoi4")]
+    if let r @ Some(_) = crate::hoi4::tables::trigger_value_item(name)
+        .or_else(|| crate::hoi4::tables::effect_value_item(name))
+    { return r; }
+    #[cfg(feature = "eu5")]
+    if let r @ Some(_) = crate::eu5::tables::trigger_value_item(name)
+        .or_else(|| crate::eu5::tables::effect_value_item(name))
+    { return r; }
+    None
+}
+
+// ─── Scope chain entries ──────────────────────────────────────────────────────
+
+/// One entry in the scope navigation table.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ScopeChainEntry {
+    /// The navigation keyword (e.g. `"capital_county"`, `"liege"`).
+    pub name: &'static str,
+    /// Human-readable source scope(s) (e.g. `"Character"`, `"Character|Province"`).
+    pub from_scope: String,
+    /// Human-readable destination scope (e.g. `"LandedTitle"`).
+    pub to_scope: String,
+}
+
+/// All built-in scope navigation steps for the compiled game.
+///
+/// Used for scope-chain completion: after `.`, suggest entries where `from_scope` is
+/// compatible with the current scope context.
+pub fn scope_chain_entries() -> Vec<ScopeChainEntry> {
+    #[cfg(feature = "ck3")]      let table = crate::ck3::tables::scope_transitions();
+    #[cfg(feature = "vic3")]     let table = crate::vic3::tables::scope_transitions();
+    #[cfg(feature = "imperator")]let table = crate::imperator::tables::scope_transitions();
+    #[cfg(feature = "hoi4")]     let table = crate::hoi4::tables::scope_transitions();
+    #[cfg(feature = "eu5")]      let table = crate::eu5::tables::scope_transitions();
+    table.iter().map(|(from, name, to)| ScopeChainEntry {
+        name,
+        from_scope: format!("{from}"),
+        to_scope: format!("{to}"),
+    }).collect()
+}
+
 // ─── Entry types ──────────────────────────────────────────────────────────────
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

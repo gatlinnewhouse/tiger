@@ -351,3 +351,18 @@ pub fn effect_schema(name: &str) -> Option<Vec<crate::lsp_tables::SchemaField>> 
     }
     None
 }
+
+/// Returns the item type name for the primary value of the effect, if it takes a direct Item.
+pub fn effect_value_item(name: &str) -> Option<&'static str> {
+    use crate::effect::Effect;
+    let name_lc = name.to_ascii_lowercase();
+    for (_, s, effect) in SCOPE_EFFECT.iter() {
+        if *s != name_lc { continue; }
+        return match effect {
+            Effect::Item(item) => Some((*item).into()),
+            Effect::ScopeOrItem(_, item) => Some((*item).into()),
+            _ => None,
+        };
+    }
+    None
+}

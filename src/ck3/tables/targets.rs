@@ -485,3 +485,8 @@ const SCOPE_TO_SCOPE_REMOVED: &[(&str, &str, &str)] = &[
     ("primary_type", "1.19", ""),
     ("secondary_type", "1.19", ""),
 ];
+
+/// All scope navigation steps for LSP scope chain completion.
+pub fn scope_transitions() -> &'static [(Scopes, &'static str, Scopes)] {
+    SCOPE_TO_SCOPE
+}

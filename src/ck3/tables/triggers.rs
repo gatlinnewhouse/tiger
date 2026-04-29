@@ -2571,3 +2571,20 @@ const TRIGGER_COMPLEX: &[(Scopes, &str, ArgumentValue, Scopes)] = {
         (Scopes::War, "war_contribution", Scope(Scopes::Character), Scopes::Value),
     ]
 };
+
+/// Returns the item type name for the primary value of the trigger, if it takes a direct Item.
+/// E.g. "has_trait" → Some("character_trait") (CK3 has has_trait checking for Trait/CharacterTrait).
+pub fn trigger_value_item(name: &str) -> Option<&'static str> {
+    use crate::trigger::Trigger;
+    let name_lc = name.to_ascii_lowercase();
+    for (_, s, trigger) in TRIGGER.iter() {
+        if *s != name_lc { continue; }
+        return match trigger {
+            Trigger::Item(item) => Some((*item).into()),
+            Trigger::ScopeOrItem(_, item) => Some((*item).into()),
+            Trigger::ItemOrBlock(item, _) => Some((*item).into()),
+            _ => None,
+        };
+    }
+    None
+}
