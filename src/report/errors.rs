@@ -9,6 +9,7 @@ use std::iter::{empty, once};
 use std::mem::take;
 use std::ops::{Bound, RangeBounds};
 use std::path::{Path, PathBuf};
+use std::sync::atomic::{AtomicBool, Ordering as AtomicOrd};
 use std::sync::{LazyLock, Mutex, MutexGuard};
 
 use encoding_rs::{UTF_8, WINDOWS_1252};
@@ -426,4 +427,56 @@ pub fn set_show_loaded_mods(v: bool) {
 /// Configure the error reporter to only show errors that match this [`FilterRule`].
 pub(crate) fn set_predicate(predicate: FilterRule) {
     Errors::get_mut().filter.predicate = predicate;
+}
+
+// =================================================================================================
+// =============== LSP Annotations (scope context for inlay hints / semantic tokens):
+// =================================================================================================
+
+/// Global flag: set to `true` by LSP servers before calling `validate_all()`.
+/// When `false`, `annotate_scope` is a no-op so there is zero overhead for CLI use.
+static LSP_MODE: AtomicBool = AtomicBool::new(false);
+
+/// Storage for scope annotations emitted during validation.
+static LSP_ANNOTATIONS: LazyLock<Mutex<Vec<LspAnnotation>>> =
+    LazyLock::new(|| Mutex::new(Vec::new()));
+
+/// A single scope annotation: the current scope type at a particular location in the script.
+#[derive(Clone, Debug)]
+pub struct LspAnnotation {
+    pub loc: Loc,
+    pub kind: LspAnnotationKind,
+}
+
+/// The kind of LSP annotation.
+#[derive(Clone, Debug)]
+pub enum LspAnnotationKind {
+    /// The resolved scope type at this block opening.
+    Scope(String),
+}
+
+/// Enable or disable LSP annotation collection.
+/// Call with `true` before running validation in an LSP server.
+pub fn set_lsp_mode(enabled: bool) {
+    LSP_MODE.store(enabled, AtomicOrd::Relaxed);
+}
+
+/// Returns `true` when the LSP server has enabled annotation collection.
+#[inline]
+pub fn lsp_mode() -> bool {
+    LSP_MODE.load(AtomicOrd::Relaxed)
+}
+
+/// Emit a scope annotation at `loc`.  No-op unless `lsp_mode()` is true.
+#[inline]
+pub fn annotate_scope(loc: Loc, scope_display: String) {
+    if !lsp_mode() { return; }
+    let ann = LspAnnotation { loc, kind: LspAnnotationKind::Scope(scope_display) };
+    LSP_ANNOTATIONS.lock().unwrap_or_else(|e| e.into_inner()).push(ann);
+}
+
+/// Drain and return all accumulated scope annotations.  Call after `validate_all()`.
+pub fn take_annotations() -> Vec<LspAnnotation> {
+    let mut lock = LSP_ANNOTATIONS.lock().unwrap_or_else(|e| e.into_inner());
+    take(&mut *lock)
 }

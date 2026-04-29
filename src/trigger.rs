@@ -142,6 +142,11 @@ pub fn validate_trigger_internal(
     let max_sev = vd.max_severity();
     vd.set_case_sensitive(false);
 
+    // Emit scope annotation for LSP inlay hints (no-op unless LSP mode is active).
+    if crate::report::lsp_mode() {
+        crate::report::annotate_scope(block.loc, sc.scopes(data).to_string());
+    }
+
     #[cfg(feature = "hoi4")]
     let caller = if Game::is_hoi4() && tooltipped == Tooltipped::Inner {
         &Lowercase::new_unchecked("custom_override_tooltip")
