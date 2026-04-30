@@ -252,6 +252,14 @@ pub fn field_item_path(name: &str) -> Option<&'static str> {
     None
 }
 
+/// Returns `true` if the named trigger or effect takes a flag name as its value.
+/// Only relevant for HOI4 (`Trigger::Flag`, `Trigger::FlagOrBlock`).
+pub fn field_is_flag(name: &str) -> bool {
+    #[cfg(feature = "hoi4")]
+    { if crate::hoi4::tables::triggers::trigger_is_flag(name) { return true; } }
+    false
+}
+
 /// Returns the static list of valid string choices for a trigger/effect that accepts
 /// a constrained set of values, e.g. `has_government = oligarchy`.
 ///

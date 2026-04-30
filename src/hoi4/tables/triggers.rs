@@ -728,6 +728,17 @@ pub fn trigger_schema(name: &str) -> Option<Vec<crate::lsp_tables::SchemaField>>
     None
 }
 
+/// Returns true if the trigger expects a flag name as its value.
+pub fn trigger_is_flag(name: &str) -> bool {
+    use crate::trigger::Trigger;
+    let name_lc = name.to_ascii_lowercase();
+    for (_, s, trigger) in TRIGGER.iter() {
+        if *s != name_lc { continue; }
+        return matches!(trigger, Trigger::Flag | Trigger::FlagOrBlock(_));
+    }
+    false
+}
+
 /// Returns the item type name for the primary value of the trigger, if it takes a direct Item.
 /// E.g. "has_trait" → Some("character_trait") (CK3 has has_trait checking for Trait/CharacterTrait).
 pub fn trigger_value_item(name: &str) -> Option<&'static str> {
