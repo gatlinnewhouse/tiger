@@ -45,6 +45,19 @@ pub fn trigger_names() -> Vec<&'static str> {
     names
 }
 
+/// Trigger names valid in the given scope (Debug string, e.g. "Character").
+/// Entries whose scope Debug representation contains `scope_hint` as a substring are included,
+/// which covers both exact single-scope entries and entries valid in multiple scopes.
+pub fn trigger_names_for_scope(scope_hint: &str) -> Vec<&'static str> {
+    let mut names: Vec<&'static str> = TRIGGER.iter()
+        .filter(|(scopes, _, _)| format!("{scopes:?}").contains(scope_hint))
+        .map(|(_, s, _)| *s)
+        .collect();
+    names.sort_unstable();
+    names.dedup();
+    names
+}
+
 /// LAST UPDATED HOI4 VERSION 1.16.4
 /// See `documentation/triggers_documentation.md` from the game files.
 /// TODO HOI4

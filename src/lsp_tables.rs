@@ -399,3 +399,21 @@ pub fn all_builtin_entries() -> Vec<LspEntry> {
 
     out
 }
+
+/// Return triggers and effects valid in the given scope, identified by its Debug name
+/// (e.g. `"Character"`, `"Country"`, `"State"`).
+///
+/// Currently only HOI4 has explicit Iterator scopes. For other games this returns empty.
+pub fn entries_for_scope(scope_hint: &str) -> Vec<LspEntry> {
+    let mut out = Vec::new();
+    #[cfg(feature = "hoi4")]
+    {
+        for name in crate::hoi4::tables::triggers::trigger_names_for_scope(scope_hint) {
+            out.push(LspEntry { name: name.to_owned(), kind: LspEntryKind::Trigger });
+        }
+        for name in crate::hoi4::tables::effects::effect_names_for_scope(scope_hint) {
+            out.push(LspEntry { name: name.to_owned(), kind: LspEntryKind::Effect });
+        }
+    }
+    out
+}

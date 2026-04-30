@@ -35,6 +35,17 @@ pub fn effect_names() -> Vec<&'static str> {
     names
 }
 
+/// Effect names valid in the given scope (Debug string, e.g. "Country").
+pub fn effect_names_for_scope(scope_hint: &str) -> Vec<&'static str> {
+    let mut names: Vec<&'static str> = SCOPE_EFFECT.iter()
+        .filter(|(scopes, _, _)| format!("{scopes:?}").contains(scope_hint))
+        .map(|(_, s, _)| *s)
+        .collect();
+    names.sort_unstable();
+    names.dedup();
+    names
+}
+
 // LAST UPDATED HOI4 VERSION 1.16.4
 // See `documentation/effects_documentation.md` from the game files.
 // TODO: activate_advisor and deactivate_advisor can't be checked yet because character idea tokens
