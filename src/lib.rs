@@ -45,7 +45,7 @@ pub use crate::report::{
 };
 pub use crate::lsp_tables::{
     LspEntry, LspEntryKind, SchemaField, ScopeChainEntry,
-    all_builtin_entries, block_schema, field_value_item, scope_chain_entries,
+    all_builtin_entries, block_schema, field_value_item, field_item_path, scope_chain_entries,
 };
 pub use crate::token::{Loc, Token};
 

@@ -2166,3 +2166,19 @@ pub fn trigger_value_item(name: &str) -> Option<&'static str> {
     }
     None
 }
+
+/// Returns the `common/` path for the item type expected as the primary value of this trigger.
+pub fn trigger_item_path(name: &str) -> Option<&'static str> {
+    use crate::trigger::Trigger;
+    let name_lc = name.to_ascii_lowercase();
+    for (_, s, trigger) in TRIGGER.iter() {
+        if *s != name_lc { continue; }
+        return match trigger {
+            Trigger::Item(item) => { let p = item.path(); if p.is_empty() { None } else { Some(p) } }
+            Trigger::ScopeOrItem(_, item) => { let p = item.path(); if p.is_empty() { None } else { Some(p) } }
+            Trigger::ItemOrBlock(item, _) => { let p = item.path(); if p.is_empty() { None } else { Some(p) } }
+            _ => None,
+        };
+    }
+    None
+}

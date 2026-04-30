@@ -214,6 +214,35 @@ pub fn field_value_item(name: &str) -> Option<&'static str> {
     None
 }
 
+/// Returns the `common/` filesystem path for items expected as the primary value of a
+/// trigger/effect, e.g. `"add_building"` → `"common/buildings/"`.
+///
+/// More precise than `field_value_item`: uses `Item::path()` from tiger-tables, so the
+/// returned string is exactly the subdirectory scanned during game loading.
+pub fn field_item_path(name: &str) -> Option<&'static str> {
+    #[cfg(feature = "ck3")]
+    if let r @ Some(_) = crate::ck3::tables::trigger_item_path(name)
+        .or_else(|| crate::ck3::tables::effect_item_path(name))
+    { return r; }
+    #[cfg(feature = "vic3")]
+    if let r @ Some(_) = crate::vic3::tables::trigger_item_path(name)
+        .or_else(|| crate::vic3::tables::effect_item_path(name))
+    { return r; }
+    #[cfg(feature = "imperator")]
+    if let r @ Some(_) = crate::imperator::tables::trigger_item_path(name)
+        .or_else(|| crate::imperator::tables::effect_item_path(name))
+    { return r; }
+    #[cfg(feature = "hoi4")]
+    if let r @ Some(_) = crate::hoi4::tables::trigger_item_path(name)
+        .or_else(|| crate::hoi4::tables::effect_item_path(name))
+    { return r; }
+    #[cfg(feature = "eu5")]
+    if let r @ Some(_) = crate::eu5::tables::trigger_item_path(name)
+        .or_else(|| crate::eu5::tables::effect_item_path(name))
+    { return r; }
+    None
+}
+
 // ─── Scope chain entries ──────────────────────────────────────────────────────
 
 /// One entry in the scope navigation table.

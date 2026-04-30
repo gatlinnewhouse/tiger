@@ -366,3 +366,18 @@ pub fn effect_value_item(name: &str) -> Option<&'static str> {
     }
     None
 }
+
+/// Returns the `common/` path for the item type expected as the primary value of this effect.
+pub fn effect_item_path(name: &str) -> Option<&'static str> {
+    use crate::effect::Effect;
+    let name_lc = name.to_ascii_lowercase();
+    for (_, s, effect) in SCOPE_EFFECT.iter() {
+        if *s != name_lc { continue; }
+        return match effect {
+            Effect::Item(item) => { let p = item.path(); if p.is_empty() { None } else { Some(p) } }
+            Effect::ScopeOrItem(_, item) => { let p = item.path(); if p.is_empty() { None } else { Some(p) } }
+            _ => None,
+        };
+    }
+    None
+}

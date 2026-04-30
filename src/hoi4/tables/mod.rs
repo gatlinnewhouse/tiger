@@ -10,7 +10,7 @@ pub mod targets;
 pub mod triggers;
 pub mod variables;
 
-pub use effects::{effect_names, effect_schema, effect_value_item};
+pub use effects::{effect_names, effect_schema, effect_value_item, effect_item_path};
 pub use iterators::iterator_names;
 pub use targets::scope_transitions;
-pub use triggers::{trigger_names, trigger_schema, trigger_value_item};
+pub use triggers::{trigger_names, trigger_schema, trigger_value_item, trigger_item_path};
