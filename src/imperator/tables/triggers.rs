@@ -653,7 +653,6 @@ pub fn trigger_value_item(name: &str) -> Option<&'static str> {
         return match trigger {
             Trigger::Item(item) => Some((*item).into()),
             Trigger::ScopeOrItem(_, item) => Some((*item).into()),
-            Trigger::ItemOrBlock(item, _) => Some((*item).into()),
             _ => None,
         };
     }
@@ -669,7 +668,6 @@ pub fn trigger_item_path(name: &str) -> Option<&'static str> {
         return match trigger {
             Trigger::Item(item) => { let p = item.path(); if p.is_empty() { None } else { Some(p) } }
             Trigger::ScopeOrItem(_, item) => { let p = item.path(); if p.is_empty() { None } else { Some(p) } }
-            Trigger::ItemOrBlock(item, _) => { let p = item.path(); if p.is_empty() { None } else { Some(p) } }
             _ => None,
         };
     }
