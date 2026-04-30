@@ -121,6 +121,12 @@ pub(crate) fn effect_to_schema(e: &Effect) -> Option<Vec<SchemaField>> {
             SchemaField { name: "months".to_owned(), required: false, type_hint: "value".to_owned() },
             SchemaField { name: "years".to_owned(),  required: false, type_hint: "value".to_owned() },
         ]),
+        #[cfg(feature = "hoi4")]
+        Effect::Iterator(_, scopes) => Some(vec![SchemaField {
+            name: "scope".to_owned(),
+            required: false,
+            type_hint: format!("{scopes:?}"),
+        }]),
         _ => None,
     }
 }
@@ -288,17 +294,22 @@ pub struct ScopeChainEntry {
 ///
 /// Used for scope-chain completion: after `.`, suggest entries where `from_scope` is
 /// compatible with the current scope context.
+#[allow(unreachable_code)]
 pub fn scope_chain_entries() -> Vec<ScopeChainEntry> {
-    #[cfg(feature = "ck3")]      let table = crate::ck3::tables::scope_transitions();
-    #[cfg(feature = "vic3")]     let table = crate::vic3::tables::scope_transitions();
-    #[cfg(feature = "imperator")]let table = crate::imperator::tables::scope_transitions();
-    #[cfg(feature = "hoi4")]     let table = crate::hoi4::tables::scope_transitions();
-    #[cfg(feature = "eu5")]      let table = crate::eu5::tables::scope_transitions();
-    table.iter().map(|(from, name, to)| ScopeChainEntry {
-        name,
-        from_scope: format!("{from}"),
-        to_scope: format!("{to}"),
-    }).collect()
+    fn convert(table: &[(impl std::fmt::Display, &'static str, impl std::fmt::Display)]) -> Vec<ScopeChainEntry> {
+        table.iter().map(|(from, name, to)| ScopeChainEntry {
+            name,
+            from_scope: format!("{from}"),
+            to_scope: format!("{to}"),
+        }).collect()
+    }
+    #[cfg(feature = "ck3")]       { return convert(crate::ck3::tables::scope_transitions()); }
+    #[cfg(feature = "vic3")]      { return convert(crate::vic3::tables::scope_transitions()); }
+    #[cfg(feature = "imperator")] { return convert(crate::imperator::tables::scope_transitions()); }
+    #[cfg(feature = "hoi4")]      { return convert(crate::hoi4::tables::scope_transitions()); }
+    #[cfg(feature = "eu5")]       { return convert(crate::eu5::tables::scope_transitions()); }
+    #[cfg(not(any(feature = "ck3", feature = "vic3", feature = "imperator", feature = "hoi4", feature = "eu5")))]
+    vec![]
 }
 
 // ─── Entry types ──────────────────────────────────────────────────────────────
