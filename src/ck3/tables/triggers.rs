@@ -2604,3 +2604,19 @@ pub fn trigger_item_path(name: &str) -> Option<&'static str> {
     }
     None
 }
+
+/// Returns the static choice list for a trigger that accepts constrained string values.
+/// Returns `None` for triggers that accept free-form values or items.
+pub fn trigger_value_choices(name: &str) -> Option<&'static [&'static str]> {
+    use crate::trigger::Trigger;
+    let name_lc = name.to_ascii_lowercase();
+    for (_, s, trigger) in TRIGGER.iter() {
+        if *s != name_lc { continue; }
+        return match trigger {
+            Trigger::Choice(choices) => Some(choices),
+            Trigger::CompareChoice(choices) => Some(choices),
+            _ => None,
+        };
+    }
+    None
+}

@@ -691,9 +691,18 @@ const TRIGGER: &[(Scopes, &str, Trigger)] = &[
 
 /// Return the block schema for a trigger, if it takes a block argument.
 pub fn trigger_schema(name: &str) -> Option<Vec<crate::lsp_tables::SchemaField>> {
+    use crate::trigger::Trigger;
     let name_lc = name.to_ascii_lowercase();
     for (_, s, trigger) in TRIGGER.iter() {
         if *s != name_lc { continue; }
+        // Iterator triggers: show the inner scope in signature help.
+        if let Trigger::Iterator(_, scopes) = trigger {
+            return Some(vec![crate::lsp_tables::SchemaField {
+                name: "scope".to_owned(),
+                required: false,
+                type_hint: format!("{scopes:?}"),
+            }]);
+        }
         let fields: Option<&'static [_]> = match trigger {
             Trigger::Block(f) => Some(f),
             Trigger::FlagOrBlock(f) => Some(f),
@@ -731,6 +740,20 @@ pub fn trigger_item_path(name: &str) -> Option<&'static str> {
         return match trigger {
             Trigger::Item(item) => { let p = item.path(); if p.is_empty() { None } else { Some(p) } }
             Trigger::ScopeOrItem(_, item) => { let p = item.path(); if p.is_empty() { None } else { Some(p) } }
+            _ => None,
+        };
+    }
+    None
+}
+
+/// Returns the static choice list for a trigger that accepts constrained string values.
+pub fn trigger_value_choices(name: &str) -> Option<&'static [&'static str]> {
+    use crate::trigger::Trigger;
+    let name_lc = name.to_ascii_lowercase();
+    for (_, s, trigger) in TRIGGER.iter() {
+        if *s != name_lc { continue; }
+        return match trigger {
+            Trigger::Choice(choices) => Some(choices),
             _ => None,
         };
     }

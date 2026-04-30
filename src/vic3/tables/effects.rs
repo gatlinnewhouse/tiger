@@ -499,3 +499,17 @@ pub fn effect_item_path(name: &str) -> Option<&'static str> {
     }
     None
 }
+
+/// Returns the static choice list for an effect that accepts constrained string values.
+pub fn effect_value_choices(name: &str) -> Option<&'static [&'static str]> {
+    use crate::effect::Effect;
+    let name_lc = name.to_ascii_lowercase();
+    for (_, s, effect) in SCOPE_EFFECT.iter() {
+        if *s != name_lc { continue; }
+        return match effect {
+            Effect::Choice(choices) => Some(choices),
+            _ => None,
+        };
+    }
+    None
+}

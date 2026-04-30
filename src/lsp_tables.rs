@@ -243,6 +243,34 @@ pub fn field_item_path(name: &str) -> Option<&'static str> {
     None
 }
 
+/// Returns the static list of valid string choices for a trigger/effect that accepts
+/// a constrained set of values, e.g. `has_government = oligarchy`.
+///
+/// Returns `None` for triggers/effects that accept free-form or item values.
+pub fn field_value_choices(name: &str) -> Option<&'static [&'static str]> {
+    #[cfg(feature = "ck3")]
+    if let r @ Some(_) = crate::ck3::tables::triggers::trigger_value_choices(name)
+        .or_else(|| crate::ck3::tables::effects::effect_value_choices(name))
+    { return r; }
+    #[cfg(feature = "vic3")]
+    if let r @ Some(_) = crate::vic3::tables::triggers::trigger_value_choices(name)
+        .or_else(|| crate::vic3::tables::effects::effect_value_choices(name))
+    { return r; }
+    #[cfg(feature = "imperator")]
+    if let r @ Some(_) = crate::imperator::tables::triggers::trigger_value_choices(name)
+        .or_else(|| crate::imperator::tables::effects::effect_value_choices(name))
+    { return r; }
+    #[cfg(feature = "hoi4")]
+    if let r @ Some(_) = crate::hoi4::tables::triggers::trigger_value_choices(name)
+        .or_else(|| crate::hoi4::tables::effects::effect_value_choices(name))
+    { return r; }
+    #[cfg(feature = "eu5")]
+    if let r @ Some(_) = crate::eu5::tables::triggers::trigger_value_choices(name)
+        .or_else(|| crate::eu5::tables::effects::effect_value_choices(name))
+    { return r; }
+    None
+}
+
 // ─── Scope chain entries ──────────────────────────────────────────────────────
 
 /// One entry in the scope navigation table.
