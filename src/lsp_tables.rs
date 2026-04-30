@@ -127,6 +127,9 @@ pub(crate) fn effect_to_schema(e: &Effect) -> Option<Vec<SchemaField>> {
             required: false,
             type_hint: format!("{scopes:?}"),
         }]),
+        // Block-validated effects with no static schema.
+        // Return Some(empty) to indicate "takes a block" without exposing fields.
+        Effect::Vb(_) | Effect::Vbc(_) | Effect::Vbv(_) => Some(vec![]),
         _ => None,
     }
 }
