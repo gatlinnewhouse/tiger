@@ -254,9 +254,9 @@ pub fn field_item_path(name: &str) -> Option<&'static str> {
 
 /// Returns `true` if the named trigger or effect takes a flag name as its value.
 /// Only relevant for HOI4 (`Trigger::Flag`, `Trigger::FlagOrBlock`).
-pub fn field_is_flag(name: &str) -> bool {
+pub fn field_is_flag(_name: &str) -> bool {
     #[cfg(feature = "hoi4")]
-    { if crate::hoi4::tables::triggers::trigger_is_flag(name) { return true; } }
+    { if crate::hoi4::tables::triggers::trigger_is_flag(_name) { return true; } }
     false
 }
 
@@ -412,14 +412,15 @@ pub fn all_builtin_entries() -> Vec<LspEntry> {
 /// (e.g. `"Character"`, `"Country"`, `"State"`).
 ///
 /// Currently only HOI4 has explicit Iterator scopes. For other games this returns empty.
-pub fn entries_for_scope(scope_hint: &str) -> Vec<LspEntry> {
+pub fn entries_for_scope(_scope_hint: &str) -> Vec<LspEntry> {
+    #[allow(unused_mut)]
     let mut out = Vec::new();
     #[cfg(feature = "hoi4")]
     {
-        for name in crate::hoi4::tables::triggers::trigger_names_for_scope(scope_hint) {
+        for name in crate::hoi4::tables::triggers::trigger_names_for_scope(_scope_hint) {
             out.push(LspEntry { name: name.to_owned(), kind: LspEntryKind::Trigger });
         }
-        for name in crate::hoi4::tables::effects::effect_names_for_scope(scope_hint) {
+        for name in crate::hoi4::tables::effects::effect_names_for_scope(_scope_hint) {
             out.push(LspEntry { name: name.to_owned(), kind: LspEntryKind::Effect });
         }
     }
