@@ -113,6 +113,43 @@ impl Define {
             err(ErrorKey::UnknownField).msg(msg).loc(&self.name).push();
         }
 
+        if std::env::var("TIGER_DUMP_DEFINES").is_ok() {
+            let define_type = match &self.bv {
+                BV::Value(token) => {
+                    if token.is_number() {
+                        "DefineType::Number"
+                    } else if token.is("yes") || token.is("no") {
+                        "DefineType::Boolean"
+                    } else {
+                        "DefineType::String"
+                    }
+                }
+                BV::Block(block) => {
+                    if block.num_items() == 0 {
+                        "DefineType::UnknownList"
+                    } else {
+                        let first = block.iter_items().next().unwrap();
+                        if first.get_value().is_some_and(Token::is_number) {
+                            if block.num_items() == 4 {
+                                "DefineType::Color"
+                            } else {
+                                "DefineType::NumberList"
+                            }
+                        } else if first.get_value().is_some_and(|t| !t.is_number()) {
+                            "DefineType::StringList"
+                        } else {
+                            "DefineType::UnknownList"
+                        }
+                    }
+                }
+            };
+            if let Some(define_type) = defines_map.get(&*key) {
+                eprintln!("    (\"{}|{}\", DefineType::{define_type:?}),", &self.group, &self.name);
+            } else {
+                eprintln!("    (\"{}|{}\", {define_type}),", &self.group, &self.name);
+            }
+        }
+
         #[cfg(feature = "ck3")]
         if self.group.is("NGameIcons")
             && self.name.is("PIETY_GROUPS")
