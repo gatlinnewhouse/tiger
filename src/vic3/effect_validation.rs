@@ -566,6 +566,7 @@ pub fn validate_create_military_formation(
     vd.field_choice("type", &["army", "fleet"]);
     let is_fleet = block.field_value_is("type", "fleet");
     vd.field_target("hq_region", sc, Scopes::StrategicRegion);
+    vd.field_target("supply_hub", sc, Scopes::State);
     vd.multi_field_validated_block("combat_unit", |block, data| {
         let mut vd = Validator::new(block, data);
         vd.field_target("type", sc, Scopes::CombatUnitType);
@@ -1210,7 +1211,7 @@ pub fn validate_add_amendment(
 ) {
     vd.req_field("type");
     vd.req_field("sponsor");
-    vd.field_item("type", Item::Amendment);
+    vd.field_item_or_target("type", sc, Item::Amendment, Scopes::AmendmentType);
     vd.field_target("sponsor", sc, Scopes::InterestGroup);
     vd.field_script_value("cooldown", sc);
     vd.field_script_value("timeout", sc);
@@ -1258,7 +1259,6 @@ pub fn validate_career_length(
     mut vd: Validator,
     _tooltipped: Tooltipped,
 ) {
-    vd.req_field("role");
     #[allow(clippy::collapsible_if)]
     if let Some(role) = vd.field_value("role") {
         if !data.item_exists(Item::CharacterRole, role.as_str())
