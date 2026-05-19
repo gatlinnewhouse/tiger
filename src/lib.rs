@@ -42,6 +42,7 @@ pub use crate::report::{
     add_loaded_mod_root, annotate_scope, disable_ansi_colors, emit_reports, log,
     set_lsp_mode, set_output_style, set_show_loaded_mods, set_show_vanilla,
     suppress_from_json, take_annotations, take_reports,
+    reset_for_lsp_run,
 };
 pub use crate::lsp_tables::{
     LspEntry, LspEntryKind, SchemaField, ScopeChainEntry,

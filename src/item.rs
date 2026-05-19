@@ -137,6 +137,8 @@ impl ItemExt for Item {
             Game::Vic3 => injectable_vic3(self),
             #[cfg(feature = "eu5")]
             Game::Eu5 => injectable_eu5(self),
+            #[allow(unreachable_patterns)]
+            _ => unreachable!("injectable() called for wrong game"),
         }
     }
 }

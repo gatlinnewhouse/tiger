@@ -81,7 +81,7 @@ impl Errors<'_> {
                 for (s, p) in suppression.iter().zip(pointers.iter()) {
                     if s.path == p.loc.pathname()
                         && s.tag == p.msg
-                        && s.line.as_deref() == self.cache.get_line(p.loc)
+                        && s.line.as_deref() == self.cache.get_line(p.loc).as_deref()
                     {
                         return true;
                     }
@@ -225,8 +225,8 @@ impl Errors<'_> {
         result
     }
 
-    pub fn store_source_file(&mut self, fullpath: PathBuf, source: &'static str) {
-        self.cache.filecache.borrow_mut().insert(fullpath, source);
+    pub fn store_source_file(&mut self, fullpath: PathBuf, source: &str) {
+        self.cache.filecache.borrow_mut().insert(fullpath, Box::from(source));
     }
 
     /// Get a mutable lock on the global ERRORS struct.
@@ -253,15 +253,15 @@ impl Errors<'_> {
 pub(crate) struct Cache {
     /// Files that have been read in to get the lines where errors occurred.
     /// Cached here to avoid duplicate I/O and UTF-8 parsing.
-    filecache: RefCell<TigerHashMap<PathBuf, &'static str>>,
+    filecache: RefCell<TigerHashMap<PathBuf, Box<str>>>,
 
-    /// Files that have been linesplit, cached to avoid doing that work again
-    linecache: RefCell<TigerHashMap<PathBuf, Vec<&'static str>>>,
+    /// Files that have been linesplit, cached to avoid doing that work again.
+    linecache: RefCell<TigerHashMap<PathBuf, Vec<Box<str>>>>,
 }
 
 impl Cache {
     /// Fetch the contents of a single line from a script file.
-    pub(crate) fn get_line(&self, loc: Loc) -> Option<&'static str> {
+    pub(crate) fn get_line(&self, loc: Loc) -> Option<Box<str>> {
         let mut filecache = self.filecache.borrow_mut();
         let mut linecache = self.linecache.borrow_mut();
 
@@ -270,11 +270,11 @@ impl Cache {
         }
         let fullpath = loc.fullpath();
         if let Some(lines) = linecache.get(fullpath) {
-            return lines.get(loc.line as usize - 1).copied();
+            return lines.get(loc.line as usize - 1).cloned();
         }
         if let Some(contents) = filecache.get(fullpath) {
-            let lines: Vec<_> = contents.lines().collect();
-            let line = lines.get(loc.line as usize - 1).copied();
+            let lines: Vec<Box<str>> = contents.lines().map(Box::from).collect();
+            let line = lines.get(loc.line as usize - 1).cloned();
             linecache.insert(fullpath.to_path_buf(), lines);
             return line;
         }
@@ -285,12 +285,11 @@ impl Cache {
             (contents, _, false) => contents,
             (_, _, true) => WINDOWS_1252.decode(&bytes).0,
         };
-        let contents = contents.into_owned().leak();
-        filecache.insert(fullpath.to_path_buf(), contents);
-
-        let lines: Vec<_> = contents.lines().collect();
-        let line = lines.get(loc.line as usize - 1).copied();
+        let contents: Box<str> = contents.into_owned().into_boxed_str();
+        let lines: Vec<Box<str>> = contents.lines().map(Box::from).collect();
+        let line = lines.get(loc.line as usize - 1).cloned();
         linecache.insert(fullpath.to_path_buf(), lines);
+        filecache.insert(fullpath.to_path_buf(), contents);
         line
     }
 }
@@ -380,8 +379,34 @@ pub fn take_reports() -> TigerHashMap<LogReportMetadata, TigerHashSet<LogReportP
     take(&mut Errors::get_mut().storage)
 }
 
-pub fn store_source_file(fullpath: PathBuf, source: &'static str) {
+pub fn store_source_file(fullpath: PathBuf, source: &str) {
     Errors::get_mut().store_source_file(fullpath, source);
+}
+
+/// Reset all tiger global state for a new LSP validation run.
+///
+/// Clears the error store, macro map, bump allocator, and path table so the next
+/// validation run starts with no accumulated data from previous runs.
+///
+/// Must be called after `take_reports()` and `take_annotations()`, and after all
+/// `Everything` instances from the previous run have been dropped (i.e. after the
+/// previous `validate_mod` call returns and the blocking task completes).
+pub fn reset_for_lsp_run() {
+    // 1. Reset ERRORS: clears cache, ignore, suppress, storage, loaded_mods, etc.
+    *Errors::get_mut() = Errors::default();
+    // 2. Clear MACRO_MAP: stores only Loc values (no &'static str), safe to clear anytime.
+    crate::macros::MACRO_MAP.clear();
+    // SAFETY:
+    //   - ERRORS cleared above → no live filecache/linecache &str refs into bump memory.
+    //   - MACRO_MAP cleared above → no live Loc refs with stale PathTableIndex values.
+    //   - Everything from previous run is dropped (caller guarantee) → no live Token &'static str
+    //     or PathTableIndex refs from scripted effect/trigger MacroCaches.
+    unsafe {
+        // 3. Reset the bump allocator: frees all token-string memory from the previous run.
+        crate::token::reset_str_bump();
+        // 4. Clear PathTable: frees all path allocations from the previous run.
+        crate::pathtable::PathTable::clear_for_lsp_run();
+    }
 }
 
 pub fn register_ignore_filter<R>(pathname: &'static Path, lines: R, filter: IgnoreFilter)

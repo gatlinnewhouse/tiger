@@ -6,7 +6,7 @@ use std::cmp::Ordering;
 use std::ffi::OsStr;
 use std::fmt::{Debug, Display, Error, Formatter};
 use std::hash::Hash;
-use std::mem::ManuallyDrop;
+use std::cell::UnsafeCell;
 use std::ops::{Bound, Range, RangeBounds};
 use std::path::{Path, PathBuf};
 use std::slice::SliceIndex;
@@ -135,20 +135,27 @@ impl Debug for Loc {
     }
 }
 
-thread_local!(static STR_BUMP: ManuallyDrop<Bump> = ManuallyDrop::new(Bump::new()));
+thread_local!(static STR_BUMP: UnsafeCell<Bump> = UnsafeCell::new(Bump::new()));
 
 /// Allocate the string on heap with a bump allocator.
-///
-/// SAFETY: This is safe as long as no `Bump::reset` is called to deallocate memory
-/// and `STR_BUMP` is not dropped when thread exits.
 pub(crate) fn bump(s: &str) -> &'static str {
-    STR_BUMP.with(|bump| {
-        let s = bump.alloc_str(s);
-        unsafe {
-            let s_ptr: *const str = s;
-            &*s_ptr
-        }
+    STR_BUMP.with(|cell| unsafe {
+        let s = (*cell.get()).alloc_str(s);
+        &*(s as *const str)
     })
+}
+
+/// Reset the thread-local bump allocator, freeing all previously allocated strings.
+///
+/// # Safety
+/// Must only be called when no `&'static str` references to bump-allocated strings are live.
+/// In LSP mode call this only after clearing `ERRORS`, `MACRO_MAP`, and dropping all
+/// `Everything` instances from the previous validation run.
+pub(crate) unsafe fn reset_str_bump() {
+    STR_BUMP.with(|cell| {
+        // SAFETY: Caller guarantees no live &'static str refs into this bump allocator.
+        unsafe { (*cell.get()).reset() };
+    });
 }
 
 /// A Token consists of a string and its location in the parsed files.

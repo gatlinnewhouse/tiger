@@ -16,15 +16,28 @@ static PATHTABLE: LazyLock<RwLock<PathTable>> = LazyLock::new(|| RwLock::new(Pat
 /// A global table for the pathnames used in `FileEntry` and `Loc`.
 ///
 /// See the [`self`](module-level documentation) for details.
-#[derive(Debug, Default)]
 pub struct PathTable {
-    /// This is indexed by a `PathTableIndex`. It contains two paths per entry: a path relative to
-    /// a `FileKind` root, and a full filesystem path.
-    ///
-    /// The paths must never be moved. This works even though the `Vec` can reallocate, because the
-    /// underlying paths are constructed from leaked `Pathbuf`s.
-    paths: Vec<(&'static Path, &'static Path)>,
+    /// Heap-allocated paths stored as raw pointers so they can be explicitly freed during
+    /// LSP resets. Each pointer was created via `Box::into_raw(PathBuf::into_boxed_path())`.
+    /// Invariant: each raw pointer remains valid until `clear_for_lsp_run` is called.
+    paths: Vec<(*const Path, *const Path)>,
 }
+
+impl Default for PathTable {
+    fn default() -> Self {
+        PathTable { paths: Vec::new() }
+    }
+}
+
+impl std::fmt::Debug for PathTable {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("PathTable").field("len", &self.paths.len()).finish()
+    }
+}
+
+// SAFETY: PathTable uniquely owns the heap-allocated Box<Path> values behind its raw pointers.
+unsafe impl Send for PathTable {}
+unsafe impl Sync for PathTable {}
 
 impl PathTable {
     /// Stores a path in the path table and returns the index for the entry.
@@ -38,8 +51,8 @@ impl PathTable {
 
     fn store_internal(&mut self, local: PathBuf, fullpath: PathBuf) -> PathTableIndex {
         let idx = PathTableIndex(u32::try_from(self.paths.len()).expect("internal error"));
-        let local = Box::leak(local.into_boxed_path());
-        let fullpath = Box::leak(fullpath.into_boxed_path());
+        let local = Box::into_raw(local.into_boxed_path()) as *const Path;
+        let fullpath = Box::into_raw(fullpath.into_boxed_path()) as *const Path;
         self.paths.push((local, fullpath));
         idx
     }
@@ -47,20 +60,36 @@ impl PathTable {
     /// Return the local path based on its index.
     /// This can panic if the index is not one provided by `PathTable::store`.
     pub fn lookup_path(idx: PathTableIndex) -> &'static Path {
-        PATHTABLE.read().unwrap().lookup_paths_inner(idx).0
+        let guard = PATHTABLE.read().unwrap();
+        let PathTableIndex(i) = idx;
+        // SAFETY: pointer is valid until clear_for_lsp_run() is called; callers must not
+        // hold &'static Path references across a reset.
+        unsafe { &*guard.paths[i as usize].0 }
     }
 
     /// Return the full path based on its index.
     /// This can panic if the index is not one provided by `PathTable::store`.
     pub fn lookup_fullpath(idx: PathTableIndex) -> &'static Path {
-        PATHTABLE.read().unwrap().lookup_paths_inner(idx).1
+        let guard = PATHTABLE.read().unwrap();
+        let PathTableIndex(i) = idx;
+        unsafe { &*guard.paths[i as usize].1 }
     }
 
-    #[inline]
-    fn lookup_paths_inner(&self, idx: PathTableIndex) -> (&'static Path, &'static Path) {
-        let PathTableIndex(idx) = idx;
-        // This will panic if idx is out of range.
-        // Should never happen as long as lookups are only done on PathTableIndex provided by this module.
-        self.paths[idx as usize]
+    /// Free all path allocations and clear the table.
+    ///
+    /// # Safety
+    /// Must only be called when no `&'static Path` references or `PathTableIndex` values
+    /// from this table are live. In LSP mode, call after clearing `ERRORS` and `MACRO_MAP`
+    /// and before starting a new validation run.
+    pub unsafe fn clear_for_lsp_run() {
+        let mut guard = PATHTABLE.write().unwrap();
+        for (local, fullpath) in guard.paths.drain(..) {
+            // SAFETY: Pointers were created by `Box::into_raw` in `store_internal`.
+            // Caller guarantees no live `&'static Path` refs exist at this point.
+            unsafe {
+                drop(Box::from_raw(local as *mut Path));
+                drop(Box::from_raw(fullpath as *mut Path));
+            }
+        }
     }
 }

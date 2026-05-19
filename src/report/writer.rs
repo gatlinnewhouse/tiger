@@ -97,8 +97,8 @@ fn log_pointer<O: Write + Send>(
         // not any particular location within the file.
         return;
     }
-    if let Some(line) = errors.cache.get_line(pointer.loc) {
-        let (line, removed, spaces) = line_spacing(line);
+    if let Some(owned_line) = errors.cache.get_line(pointer.loc) {
+        let (line, removed, spaces) = line_spacing(&owned_line);
         log_line_from_source(errors, output, pointer, indentation, line, spaces);
         log_line_carets(errors, output, pointer, indentation, line, removed, spaces, severity);
     }

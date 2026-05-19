@@ -113,7 +113,7 @@ pub(crate) fn effect_to_schema(e: &Effect) -> Option<Vec<SchemaField>> {
             field(sf, &format!("scope:{scope:?}")),
         ]),
         #[cfg(feature = "ck3")]
-        Effect::ItemValue(if_, item) => Some(vec![field(if_, &format!("item:{item:?}"))]),
+        Effect::ItemValue(if_, item, _) => Some(vec![field(if_, &format!("item:{item:?}"))]),
         #[cfg(any(feature = "ck3", feature = "vic3"))]
         Effect::Timespan => Some(vec![
             SchemaField { name: "days".to_owned(),   required: false, type_hint: "value".to_owned() },
