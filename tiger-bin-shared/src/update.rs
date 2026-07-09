@@ -61,7 +61,7 @@ pub fn update(current_version: &str, target_version: Option<&str>) -> Result<(),
 
             #[cfg(target_os = "linux")]
             let bin_path = format!("{BIN_NAME}-linux-v{{{{version}}}}/{BIN_NAME}");
-            #[cfg(all(target_os = "macos", target_arch = "arm"))]
+            #[cfg(all(target_os = "macos", target_arch = "aarch64"))]
             let bin_path = format!("{BIN_NAME}-macos-arm-v{{{{version}}}}/{BIN_NAME}");
             #[cfg(all(target_os = "macos", target_arch = "x86_64"))]
             let bin_path = format!("{BIN_NAME}-macos-x86-v{{{{version}}}}/{BIN_NAME}");
